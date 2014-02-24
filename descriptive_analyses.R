@@ -13,6 +13,18 @@ library(ggplot2)
 library(RPostgreSQL)
 library(scales)
 
+# set custom theme
+old_theme <- theme_update(plot.background = theme_blank(), 
+                          panel.background = theme_blank(), 
+                          panel.grid.major = theme_line(color = "#CCCCCC"), 
+                          panel.grid.minor = theme_line(color = "#CCCCCC", linetype = "dotted"), 
+                          axis.line = theme_segment(color = "#000000"), 
+                          axis.text.x = theme_text(color = "#000000"), 
+                          axis.text.y = theme_text(color = "#000000", hjust = 1), 
+                          axis.title.x = theme_text(color = "#000000", face = "bold"), 
+                          axis.title.y = theme_text(color = "#000000", face = "bold", angle = 90)
+                          )
+
 # variable declaration
 #ageGroupsJP <- factor(c("0歳以上5歳未満", "5歳以上10歳未満", "10 歳以上 15 歳未満", "15 歳以上 20 歳未満", "20 歳以上 25 歳未満", "25 歳以上 30 歳未満", "30 歳以上 35 歳未満", "35 歳以上 40 歳未満", "40 歳以上 45 歳未満", "45 歳以上 50 歳未満", "50 歳以上 55 歳未満", "55 歳以上 60 歳未満", "60 歳以上 65 歳未満", "65 歳以上 70 歳未満", "70 歳以上 75 歳未満", "75 歳以上 80 歳未満", "80 歳以上 85 歳未満", "85 歳以上"))
 #ageGroupsEN <- factor(c("under 4 years", "5-9 years", "10-14 years", "15-19 years", "20-24 years", "25-29 years", "30-34 years", "35-39 years", "40-44 years", "45-49 years", "50-54 years", "55-59 years", "60-64 years", "65-69 years", "70-74 years", "75-79 years", "80-84 years", "85 years and older"))
@@ -62,7 +74,8 @@ pSubtripsPerTransportationMode <- ggplot(dfSubtripsPerTransportationMode,
          x = "transportation mode", 
          y = "subtrips"
     ) + 
-    scale_y_continuous(limits = c(0, 2000000), 
+    scale_y_continuous(expand = c(0, 0), 
+                       limits = c(0, 2000000), 
                        breaks=seq(0, 20000000, 500000), 
                        labels = comma
     ) + 
@@ -91,8 +104,9 @@ pSubtripsPerGroupedTransportationMode <- ggplot(dfSubtripsPerGroupedTransportati
          x = "transportation mode", 
          y = "subtrips"
          ) + 
-    scale_y_continuous(limits = c(0, 1200000), 
-                       breaks=seq(0, 12000000, 100000), 
+    scale_y_continuous(expand = c(0, 0), 
+                       limits = c(0, 1150000), 
+                       breaks=seq(0, 11500000, 100000), 
                        labels = comma
                        ) + 
     scale_fill_brewer(palette="Dark2") + 
@@ -106,3 +120,4 @@ for (connection in names(dbListConnections(drv))) {
     dbDisconnect(connection)   
 }
 dbUnloadDriver(drv)
+theme_set(old_theme)
