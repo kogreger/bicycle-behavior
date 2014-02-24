@@ -82,6 +82,7 @@ dfSubtripsPerGroupedTransportationMode$mode <- factor(dfSubtripsPerGroupedTransp
 dfSubtripsPerGroupedTransportationMode$mode <- factor(dfSubtripsPerGroupedTransportationMode$mode, 
                                                       levels = rev(levels(dfSubtripsPerGroupedTransportationMode$mode))
                                                       )
+dfSubtripsPerGroupedTransportationMode <- subset(dfSubtripsPerGroupedTransportationMode, mode != "stationarity")  # remove stationarity
 pSubtripsPerGroupedTransportationMode <- ggplot(dfSubtripsPerGroupedTransportationMode, 
                                                 aes(mode, subtrips)) + 
     layer(
