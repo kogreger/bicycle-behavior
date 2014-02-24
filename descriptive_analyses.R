@@ -7,11 +7,10 @@
 #
 
 # initialization
-#install.packages("ggplot2")
-#install.packages("RPostgreSQL")
 library(ggplot2)
 library(RPostgreSQL)
 library(scales)
+library(RColorBrewer)
 
 # set custom theme
 old_theme <- theme_update(plot.background = theme_blank(), 
@@ -61,10 +60,10 @@ dfSubtripsPerGroupedTransportationMode <- dfSubtripsPerTransportationMode
 # - 13 original transportation modes
 dfSubtripsPerTransportationMode$mode <- factor(dfSubtripsPerTransportationMode$mode, 
                                                labels = transportationModesEN
-                                               )
+                                               )  # assign verbose labels
 dfSubtripsPerTransportationMode$mode <- factor(dfSubtripsPerTransportationMode$mode, 
                                                levels = rev(levels(dfSubtripsPerTransportationMode$mode))
-                                               )
+                                               )  # flip order for ggplot bar chart
 pSubtripsPerTransportationMode <- ggplot(dfSubtripsPerTransportationMode, 
                                          aes(mode, subtrips)) + 
     layer(geom = "bar", 
@@ -76,24 +75,28 @@ pSubtripsPerTransportationMode <- ggplot(dfSubtripsPerTransportationMode,
     ) + 
     scale_y_continuous(expand = c(0, 0), 
                        limits = c(0, 2000000), 
-                       breaks=seq(0, 20000000, 500000), 
+                       breaks = seq(0, 20000000, 500000), 
                        labels = comma
     ) + 
     coord_flip()
 pSubtripsPerTransportationMode
 
 # - 9 grouped transportation modes
-dfSubtripsPerGroupedTransportationMode$subtrips[3] <- dfSubtripsPerGroupedTransportationMode$subtrips[3] + dfSubtripsPerGroupedTransportationMode$subtrips[4]  # group "moped" and "motorcycle"
-dfSubtripsPerGroupedTransportationMode$subtrips[6] <- dfSubtripsPerGroupedTransportationMode$subtrips[6] + dfSubtripsPerGroupedTransportationMode$subtrips[7]  # group "car" and "minivan"
-dfSubtripsPerGroupedTransportationMode$subtrips[9] <- dfSubtripsPerGroupedTransportationMode$subtrips[9] + dfSubtripsPerGroupedTransportationMode$subtrips[10]  # group "private bus" and "public bus"
-dfSubtripsPerGroupedTransportationMode$subtrips[11] <- dfSubtripsPerGroupedTransportationMode$subtrips[11] + dfSubtripsPerGroupedTransportationMode$subtrips[12]  # group "monorail" and "train, subway"
+dfSubtripsPerGroupedTransportationMode$subtrips[3] <- dfSubtripsPerGroupedTransportationMode$subtrips[3] + 
+    dfSubtripsPerGroupedTransportationMode$subtrips[4]  # group "moped" and "motorcycle"
+dfSubtripsPerGroupedTransportationMode$subtrips[6] <- dfSubtripsPerGroupedTransportationMode$subtrips[6] + 
+    dfSubtripsPerGroupedTransportationMode$subtrips[7]  # group "car" and "minivan"
+dfSubtripsPerGroupedTransportationMode$subtrips[9] <- dfSubtripsPerGroupedTransportationMode$subtrips[9] + 
+    dfSubtripsPerGroupedTransportationMode$subtrips[10]  # group "private bus" and "public bus"
+dfSubtripsPerGroupedTransportationMode$subtrips[11] <- dfSubtripsPerGroupedTransportationMode$subtrips[11] + 
+    dfSubtripsPerGroupedTransportationMode$subtrips[12]  # group "monorail" and "train, subway"
 dfSubtripsPerGroupedTransportationMode <- subset(dfSubtripsPerGroupedTransportationMode, !(mode %in% c(4, 7, 10, 12)))
 dfSubtripsPerGroupedTransportationMode$mode <- factor(dfSubtripsPerGroupedTransportationMode$mode, 
                                                       labels = groupedTransportationModesEN
-                                                      )
+                                                      )  # assign verbose labels
 dfSubtripsPerGroupedTransportationMode$mode <- factor(dfSubtripsPerGroupedTransportationMode$mode, 
                                                       levels = rev(levels(dfSubtripsPerGroupedTransportationMode$mode))
-                                                      )
+                                                      )  # flip order for ggplot bar chart
 dfSubtripsPerGroupedTransportationMode <- subset(dfSubtripsPerGroupedTransportationMode, mode != "stationarity")  # remove stationarity
 pSubtripsPerGroupedTransportationMode <- ggplot(dfSubtripsPerGroupedTransportationMode, 
                                                 aes(mode, subtrips, fill = mode)) + 
@@ -106,17 +109,33 @@ pSubtripsPerGroupedTransportationMode <- ggplot(dfSubtripsPerGroupedTransportati
          ) + 
     scale_y_continuous(expand = c(0, 0), 
                        limits = c(0, 1150000), 
-                       breaks=seq(0, 11500000, 100000), 
+                       breaks = seq(0, 11500000, 100000), 
                        labels = comma
                        ) + 
-    scale_fill_brewer(palette="Dark2") + 
-    theme(legend.position="none") + 
+    scale_fill_brewer(palette = "Dark2") + 
+    theme(legend.position = "none") + 
     coord_flip()
 pSubtripsPerGroupedTransportationMode
 
+# - pie chart of 9 grouped transportation modes
+dfSubtripsPerGroupedTransportationMode2 <- dfSubtripsPerGroupedTransportationMode[with(dfSubtripsPerGroupedTransportationMode, 
+                                                                                       order(-subtrips)), ]
+labels <- paste(dfSubtripsPerGroupedTransportationMode2$mode, 
+                round(dfSubtripsPerGroupedTransportationMode2$subtrips / sum(dfSubtripsPerGroupedTransportationMode2$subtrips) * 100, 1), 
+                sep = ": ")
+labels <- paste(labels,"%",sep="")
+pie(dfSubtripsPerGroupedTransportationMode2$subtrips, 
+    labels = labels, 
+    col = "#FFFFFF", 
+    clockwise = TRUE, 
+    init.angle = 0, 
+    edges = 360, 
+    main = "Subtrips per Transportation Mode"
+    )
+
 
 # clean up
-for (connection in names(dbListConnections(drv))) {
+for (connection in dbListConnections(drv)) {
     dbDisconnect(connection)   
 }
 dbUnloadDriver(drv)
