@@ -12,16 +12,16 @@ library(RPostgreSQL)
 library(scales)
 library(RColorBrewer)
 
-# set custom theme
-old_theme <- theme_update(plot.background = theme_blank(), 
-                          panel.background = theme_blank(), 
-                          panel.grid.major = theme_line(color = "#CCCCCC"), 
-                          panel.grid.minor = theme_line(color = "#CCCCCC", linetype = "dotted"), 
-                          axis.line = theme_segment(color = "#000000"), 
-                          axis.text.x = theme_text(color = "#000000"), 
-                          axis.text.y = theme_text(color = "#000000", hjust = 1), 
-                          axis.title.x = theme_text(color = "#000000", face = "bold"), 
-                          axis.title.y = theme_text(color = "#000000", face = "bold", angle = 90)
+# custom theme
+old_theme <- theme_update(plot.background = element_blank(), 
+                          panel.background = element_blank(), 
+                          panel.grid.major = element_line(color = "#CCCCCC"), 
+                          panel.grid.minor = element_line(color = "#CCCCCC", linetype = "dotted"), 
+                          axis.line = element_line(color = "#000000"), 
+                          axis.text.x = element_text(color = "#000000"), 
+                          axis.text.y = element_text(color = "#000000", hjust = 1), 
+                          axis.title.x = element_text(color = "#000000", face = "bold"), 
+                          axis.title.y = element_text(color = "#000000", face = "bold", angle = 90)
                           )
 
 # variable declaration
@@ -49,7 +49,64 @@ con <- dbConnect(drv,
                  )
 
 
-# number of subtrips per transportation mode
+# 01 # number of subtrips per person
+rs <- dbSendQuery(con, 
+                  "SELECT pid, COUNT(*) subtrips, SUM(distance) totdist FROM tky08.subtrip GROUP BY pid"
+)
+dfSubtripsPerPerson <- fetch(rs, n = -1)
+dbClearResult(rs)
+pSubtripsPerPerson <- ggplot(dfSubtripsPerPerson, 
+                              aes(x=subtrips)) + 
+    geom_histogram(binwidth=1, 
+                   fill="#660099"
+                   ) + 
+    labs(title = "Subtrips per Person", 
+         x = "subtrips", 
+         y = "frequency"
+    ) + 
+    scale_x_continuous(expand = c(0, 0), 
+                       limits=c(1, max(subtrips, na.rm = TRUE)), 
+                       breaks = c(1:4,6:9,seq(0, max(subtrips, na.rm = TRUE), 5)), 
+                       labels = comma
+    ) + 
+    scale_y_continuous(expand = c(0, 0), 
+                       labels = comma
+    ) +
+    geom_vline(aes(xintercept=mean(subtrips, na.rm=TRUE)), 
+               color="red", 
+               linetype="dashed", 
+               size=1)
+pSubtripsPerPerson
+#summary(dfSubtripsPerPerson$subtrips)
+
+
+# 02 # total length of subtrips per person
+pSubtripLengthPerPerson <- ggplot(dfSubtripsPerPerson, 
+                                  aes(x=totdist / 1000)) + 
+    geom_histogram(binwidth=sd(dfSubtripsPerPerson$totdist / 1000, na.rm = TRUE), 
+                   fill="#660099"
+    ) + 
+    labs(title = "Total Length of Subtrips per Person", 
+         x = "total length of subtrips [km]", 
+         y = "frequency"
+    ) + 
+    scale_x_continuous(expand = c(0, 0), 
+                       limits=c(1, max(dfSubtripsPerPerson$totdist / 1000, na.rm = TRUE)), 
+                       breaks = c(seq(0, max(dfSubtripsPerPerson$totdist / 1000, na.rm = TRUE), 100)), 
+                       labels = comma
+    ) + 
+    scale_y_continuous(expand = c(0, 0), 
+                       labels = comma
+    ) +
+    geom_vline(aes(xintercept=mean(dfSubtripsPerPerson$totdist / 1000, na.rm=TRUE)), 
+               color="red", 
+               linetype="dashed", 
+               size=1)
+pSubtripLengthPerPerson
+summary(dfSubtripsPerPerson$totdist / 1000)
+
+
+# 03 # number of subtrips per transportation mode
 rs <- dbSendQuery(con, 
                   "SELECT means AS mode, COUNT(*) AS subtrips FROM tky08.subtrip GROUP BY means ORDER BY means"
                   )
@@ -57,7 +114,7 @@ dfSubtripsPerTransportationMode <- fetch(rs, n = -1)
 dbClearResult(rs)
 dfSubtripsPerGroupedTransportationMode <- dfSubtripsPerTransportationMode
 
-# - 13 original transportation modes
+# 03a # 13 original transportation modes
 dfSubtripsPerTransportationMode$mode <- factor(dfSubtripsPerTransportationMode$mode, 
                                                labels = transportationModesEN
                                                )  # assign verbose labels
@@ -81,7 +138,7 @@ pSubtripsPerTransportationMode <- ggplot(dfSubtripsPerTransportationMode,
     coord_flip()
 pSubtripsPerTransportationMode
 
-# - 9 grouped transportation modes
+# 03b # 9 grouped transportation modes
 dfSubtripsPerGroupedTransportationMode$subtrips[3] <- dfSubtripsPerGroupedTransportationMode$subtrips[3] + 
     dfSubtripsPerGroupedTransportationMode$subtrips[4]  # group "moped" and "motorcycle"
 dfSubtripsPerGroupedTransportationMode$subtrips[6] <- dfSubtripsPerGroupedTransportationMode$subtrips[6] + 
@@ -117,7 +174,7 @@ pSubtripsPerGroupedTransportationMode <- ggplot(dfSubtripsPerGroupedTransportati
     coord_flip()
 pSubtripsPerGroupedTransportationMode
 
-# - pie chart of 9 grouped transportation modes
+# 03c # pie chart of 9 grouped transportation modes
 dfSubtripsPerGroupedTransportationMode2 <- dfSubtripsPerGroupedTransportationMode[with(dfSubtripsPerGroupedTransportationMode, 
                                                                                        order(-subtrips)), ]
 labels <- paste(dfSubtripsPerGroupedTransportationMode2$mode, 
