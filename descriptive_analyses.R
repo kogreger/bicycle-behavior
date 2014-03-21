@@ -8,9 +8,9 @@
 
 # initialization
 library(ggplot2)
+library(RColorBrewer)
 library(RPostgreSQL)
 library(scales)
-library(RColorBrewer)
 
 # custom theme
 old_theme <- theme_update(plot.background = element_blank(), 
@@ -225,7 +225,7 @@ pSubtripLengthPerGroupedTransportationMode
 #dfSubtripsPerGroupedTransportationMode
 
 
-# 05 # total length of subtrips per transportation mode
+# 05 # total length of subtrips per grouped transportation mode
 rs <- dbSendQuery(con, 
                   "SELECT means AS mode, distance FROM tky08.subtrip"
 )
@@ -268,7 +268,6 @@ pSubtripLengthPerTransportationMode <- ggplot(dfSubtripLengthPerGroupedTransport
     theme(legend.position = "none") + 
     coord_flip()
 pSubtripLengthPerTransportationMode
-summary(dfSubtripLengthPerGroupedTransportationMode$distance / 1000)
 
 
 # clean up
