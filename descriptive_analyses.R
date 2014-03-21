@@ -29,9 +29,9 @@ old_theme <- theme_update(plot.background = element_blank(),
 #ageGroupsEN <- factor(c("under 4 years", "5-9 years", "10-14 years", "15-19 years", "20-24 years", "25-29 years", "30-34 years", "35-39 years", "40-44 years", "45-49 years", "50-54 years", "55-59 years", "60-64 years", "65-69 years", "70-74 years", "75-79 years", "80-84 years", "85 years and older"))
 #gendersJP <- factor(c("男性", "女性", "不明"))
 #gendersEN <- factor(c("male", "female", "n/a"))
-transportationModesJP <- factor(c("徒歩", "自転車", "原動機付自転車", "自動二輪車", "タクシー", "乗用車", "軽乗用車", "貨物自動車", "自家用バス", "路線バス", "モノレール・新交通", "鉄道・地下鉄", "停滞"))
+#transportationModesJP <- factor(c("徒歩", "自転車", "原動機付自転車", "自動二輪車", "タクシー", "乗用車", "軽乗用車", "貨物自動車", "自家用バス", "路線バス", "モノレール・新交通", "鉄道・地下鉄", "停滞"))
 transportationModesEN <- factor(c("walking", "bicycle", "moped", "motorcycle", "taxi", "car", "minivan", "truck", "private bus", "public bus", "monorail", "train, subway", "stationarity"))
-groupedTransportationModesJP <- factor(c("徒歩", "自転車", "自動二輪車", "タクシー", "乗用車", "貨物自動車", "バス", "鉄道", "停滞"))
+#groupedTransportationModesJP <- factor(c("徒歩", "自転車", "自動二輪車", "タクシー", "乗用車", "貨物自動車", "バス", "鉄道", "停滞"))
 groupedTransportationModesEN <- factor(c("walking", "bicycle", "motorcycle", "taxi", "car", "truck", "bus", "train", "stationarity"))
 #occupationsJP <- factor(c("農林水産業従事者", "生産工程・労務作業者", "販売従事者", "サービス職業従事者", "運輸・通信従事者", "保安職業従事者", "事務従事者", "専門的・技術的職業従事者", "管理的職業従事者", "その他職業", "園児・小学生・中学", "高校生", "大学生・短大生・各種専門学校生", "主婦・主夫(職業従事者を除く)", "無職", "その他", "不明"))
 #occupationsEN <- factor(c("agriculture, forestry & fishery", "production", "sales", "service", "transportation & communication", "security", "clerical", "professional & technical", "management", "other occupation", "kindergarten, elementary & junior high school", "senior high school", "university, college & vocational school", "housewife, househusband", "unemployed, retired", "other", "n/a"))
@@ -51,7 +51,7 @@ con <- dbConnect(drv,
 
 # 01 # number of subtrips per person
 rs <- dbSendQuery(con, 
-                  "SELECT pid, COUNT(*) subtrips, SUM(distance) totdist FROM tky08.subtrip GROUP BY pid"
+                  "SELECT pid, COUNT(*) AS subtrips, SUM(distance) AS totdist FROM tky08.subtrip GROUP BY pid"
 )
 dfSubtripsPerPerson <- fetch(rs, n = -1)
 dbClearResult(rs)
@@ -65,14 +65,14 @@ pSubtripsPerPerson <- ggplot(dfSubtripsPerPerson,
          y = "frequency"
     ) + 
     scale_x_continuous(expand = c(0, 0), 
-                       limits = c(1, max(subtrips, na.rm = TRUE)), 
-                       breaks = c(1:4,6:9,seq(0, max(subtrips, na.rm = TRUE), 5)), 
+                       limits = c(1, max(dfSubtripsPerPerson$subtrips, na.rm = TRUE) * 1.1), 
+                       breaks = c(1:4,6:9,seq(0, max(dfSubtripsPerPerson$subtrips, na.rm = TRUE) * 1.1, 5)), 
                        labels = comma
     ) + 
     scale_y_continuous(expand = c(0, 0), 
                        labels = comma
     ) +
-    geom_vline(aes(xintercept = mean(subtrips, na.rm = TRUE)), 
+    geom_vline(aes(xintercept = mean(dfSubtripsPerPerson$subtrips, na.rm = TRUE)), 
                color = "red", 
                linetype = "dashed", 
                size = 1)
@@ -91,8 +91,8 @@ pSubtripLengthPerPerson <- ggplot(dfSubtripsPerPerson,
          y = "frequency"
     ) + 
     scale_x_continuous(expand = c(0, 0), 
-                       limits = c(1, max(dfSubtripsPerPerson$totdist / 1000, na.rm = TRUE)), 
-                       breaks = c(seq(0, max(dfSubtripsPerPerson$totdist / 1000, na.rm = TRUE), 100)), 
+                       limits = c(1, max(dfSubtripsPerPerson$totdist / 1000, na.rm = TRUE) * 1.1), 
+                       breaks = c(seq(0, max(dfSubtripsPerPerson$totdist / 1000, na.rm = TRUE) * 1.1, 100)), 
                        labels = comma
     ) + 
     scale_y_continuous(expand = c(0, 0), 
@@ -131,8 +131,8 @@ pSubtripsPerTransportationMode <- ggplot(dfSubtripsPerTransportationMode,
          y = "subtrips"
     ) + 
     scale_y_continuous(expand = c(0, 0), 
-                       limits = c(0, 2000000), 
-                       breaks = seq(0, 20000000, 500000), 
+                       limits = c(0, max(dfSubtripsPerTransportationMode$subtrips, na.rm = TRUE) * 1.1), 
+                       breaks = seq(0, max(dfSubtripsPerTransportationMode$subtrips, na.rm = TRUE) * 1.1, 500000), 
                        labels = comma
     ) + 
     coord_flip()
@@ -176,8 +176,8 @@ pSubtripsPerGroupedTransportationMode <- ggplot(dfSubtripsPerGroupedTransportati
          y = "subtrips"
          ) + 
     scale_y_continuous(expand = c(0, 0), 
-                       limits = c(0, 1150000), 
-                       breaks = seq(0, 11500000, 100000), 
+                       limits = c(0, max(dfSubtripsPerGroupedTransportationMode$subtrips, na.rm = TRUE) * 1.1), 
+                       breaks = seq(0, max(dfSubtripsPerGroupedTransportationMode$subtrips, na.rm = TRUE) * 1.1, 100000), 
                        labels = comma
                        ) + 
     scale_fill_brewer(palette = "Dark2") + 
@@ -214,8 +214,8 @@ pSubtripLengthPerGroupedTransportationMode <- ggplot(dfSubtripsPerGroupedTranspo
          y = "accumulated length of subtrips [km]"
     ) + 
     scale_y_continuous(expand = c(0, 0), 
-                       limits = c(0, max(dfSubtripsPerGroupedTransportationMode$totdist / 1000, na.rm = TRUE)), 
-                       breaks = seq(0, max(dfSubtripsPerGroupedTransportationMode$totdist / 1000, na.rm = TRUE), 1000000), 
+                       limits = c(0, max(dfSubtripsPerGroupedTransportationMode$totdist / 1000, na.rm = TRUE) * 1.1), 
+                       breaks = seq(0, max(dfSubtripsPerGroupedTransportationMode$totdist / 1000, na.rm = TRUE) * 1.1, 1000000), 
                        labels = comma
     ) + 
     scale_fill_brewer(palette = "Dark2") + 
@@ -260,8 +260,8 @@ pSubtripLengthPerTransportationMode <- ggplot(dfSubtripLengthPerGroupedTransport
          y = "length of subtrips [km]"
     ) + 
     scale_y_continuous(expand = c(0, 0), 
-                       limits = c(0, max(dfSubtripLengthPerGroupedTransportationMode$distance / 1000, na.rm = TRUE)), 
-                       breaks = seq(0, max(dfSubtripLengthPerGroupedTransportationMode$distance / 1000, na.rm = TRUE), 50), 
+                       limits = c(0, max(dfSubtripLengthPerGroupedTransportationMode$distance / 1000, na.rm = TRUE) * 1.1), 
+                       breaks = seq(0, max(dfSubtripLengthPerGroupedTransportationMode$distance / 1000, na.rm = TRUE) * 1.1, 50), 
                        labels = comma
     ) + 
     scale_fill_brewer(palette = "Dark2") + 
