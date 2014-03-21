@@ -274,6 +274,54 @@ pSubtripLengthPerTransportationMode <- ggplot(dfSubtripLengthPerGroupedTransport
 pSubtripLengthPerTransportationMode
 
 
+# 06 # started subtrips per hour
+rs <- dbSendQuery(con, 
+                  "SELECT date_part('hour', sdate) AS shour, means AS mode, COUNT(*) AS subtrips FROM tky08.subtrip WHERE sdate IS NOT NULL GROUP BY shour, mode"
+)
+dfStartedSubtripsPerHour <- fetch(rs, n = -1)
+dbClearResult(rs)
+pStartedSubtripsPerHour <- ggplot(dfStartedSubtripsPerHour, 
+                                  aes(x = shour, y = subtrips)) + 
+    geom_bar(stat = "identity",
+             fill = "#660099"
+    ) + 
+    labs(title = "Started Subtrips per Hour", 
+         x = "hour", 
+         y = "subtrips"
+    ) + 
+    scale_x_continuous(expand = c(0, 0), 
+                       limits = c(0, 23), 
+                       breaks = c(0:23, 1), 
+                       labels = comma
+    ) + 
+    scale_y_continuous(expand = c(0, 0), 
+                       labels = comma
+    ) + 
+    theme(legend.position = "none")
+pStartedSubtripsPerHour
+
+
+# 07 # started subtrips per hour and transportation mode
+pStartedSubtripsPerHourAndTransportationMode <- ggplot(dfStartedSubtripsPerHour, 
+                                                       aes(x = shour, y = subtrips)) + 
+    geom_bar(stat = "identity") + 
+    labs(title = "Started Subtrips per Hour and Transportation Mode", 
+         x = "hour", 
+         y = "subtrips"
+    ) + 
+    scale_x_continuous(expand = c(0, 0), 
+                       limits = c(0, 23), 
+                       breaks = c(0:23, 1), 
+                       labels = comma
+    ) + 
+    scale_y_continuous(expand = c(0, 0), 
+                       labels = comma
+    ) + 
+    theme(legend.position = "none") +
+    facet_wrap(~ mode)
+pStartedSubtripsPerHourAndTransportationMode
+
+
 # clean up
 for (connection in dbListConnections(drv)) {
     dbDisconnect(connection)   
