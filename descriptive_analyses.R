@@ -265,7 +265,11 @@ pSubtripLengthPerTransportationMode <- ggplot(dfSubtripLengthPerGroupedTransport
                        labels = comma
     ) + 
     scale_fill_brewer(palette = "Dark2") + 
-    theme(legend.position = "none") + 
+    theme(legend.position = "none") +
+    stat_summary(fun.y = mean, 
+                 geom = "point", 
+                 shape = 23, 
+                 size = 4) + 
     coord_flip()
 pSubtripLengthPerTransportationMode
 
