@@ -301,7 +301,28 @@ pStartedSubtripsPerHour <- ggplot(dfStartedSubtripsPerHour,
 pStartedSubtripsPerHour
 
 
-# 07 # started subtrips per hour and transportation mode
+# 07a # started subtrips per hour and transportation mode
+pStartedSubtripsPerHourAndTransportationMode <- ggplot(dfStartedSubtripsPerHour, 
+                                                       aes(x = shour, y = subtrips)) + 
+    geom_bar(stat = "identity") + 
+    labs(title = "Started Subtrips per Hour and Transportation Mode", 
+         x = "hour", 
+         y = "subtrips"
+    ) + 
+    scale_x_continuous(expand = c(0, 0), 
+                       limits = c(0, 23), 
+                       breaks = c(0:23, 1), 
+                       labels = comma
+    ) + 
+    scale_y_continuous(expand = c(0, 0), 
+                       labels = comma
+    ) + 
+    theme(legend.position = "none") +
+    facet_wrap(~ mode)
+pStartedSubtripsPerHourAndTransportationMode
+
+
+# 07b # started subtrips per hour and grouped transportation mode
 pStartedSubtripsPerHourAndTransportationMode <- ggplot(dfStartedSubtripsPerHour, 
                                                        aes(x = shour, y = subtrips)) + 
     geom_bar(stat = "identity") + 
