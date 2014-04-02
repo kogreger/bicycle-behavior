@@ -3,7 +3,7 @@
 #  the bicycle usage behavior.
 #
 #  Author: Konstantin Greger
-#  Date:   23 Mar 2014
+#  Date:   02 Apr 2014
 #
 
 # initialization
@@ -399,6 +399,100 @@ pStartedSubtripsPerHourAndGroupedTransportationMode <- ggplot(df,
                        labels = comma
                        ) + 
     scale_y_continuous(expand = c(0, 0), 
+                       labels = comma
+                       ) + 
+    scale_fill_brewer(palette = "Dark2") + 
+    theme(legend.position = "none") +
+    facet_wrap(~ mode)
+pStartedSubtripsPerHourAndGroupedTransportationMode
+
+
+# 08a # length of started subtrips per hour
+rs <- dbSendQuery(con, 
+                  "SELECT date_part('hour', sdate) AS shour, means AS mode, SUM(distance) AS distance FROM tky08.subtrip WHERE sdate IS NOT NULL GROUP BY shour, mode"
+)
+df <- fetch(rs, n = -1)
+dbClearResult(rs)
+pLengthStartedSubtripsPerHour <- ggplot(df, 
+                                        aes(x = shour, y = distance / 1000000)
+                                        ) + 
+    geom_bar(stat = "identity",
+             fill = "#660099"
+             ) + 
+    labs(title = "Length of Started Subtrips per Hour", 
+         x = "hour", 
+         y = "length of subtrips [1,000 km]"
+         ) + 
+    scale_x_continuous(expand = c(0, 0), 
+                       limits = c(0, 23), 
+                       breaks = c(0:23, 1), 
+                       labels = comma
+                       ) + 
+    scale_y_continuous(expand = c(0, 0), 
+                       limits = c(0, max(df$distance / 1000000, na.rm = TRUE) * 1.1), 
+                       breaks = seq(0, max(df$distance / 1000000, na.rm = TRUE) * 1.1, 500), 
+                       labels = comma
+                       ) + 
+    theme(legend.position = "none")
+pLengthStartedSubtripsPerHour
+
+
+# 08b # length of started subtrips per hour and grouped transportation mode
+for (i in seq(0, 23)) {
+    cat(i)
+    df[ which(df$shour == i & df$mode == 3), 3] <- 
+        ifelse(length(df[ which(df$shour == i & df$mode == 3), 3]) > 0, 
+               df[ which(df$shour == i & df$mode == 3), 3], 
+               0) + 
+        ifelse(length(df[ which(df$shour == i & df$mode == 4), 3]) > 0, 
+               df[ which(df$shour == i & df$mode == 4), 3], 
+               0)  # group "moped" and "motorcycle"
+    df[ which(df$shour == i & df$mode == 6), 3] <- 
+        ifelse(length(df[ which(df$shour == i & df$mode == 6), 3]) > 0, 
+               df[ which(df$shour == i & df$mode == 6), 3], 
+               0) + 
+        ifelse(length(df[ which(df$shour == i & df$mode == 7), 3]) > 0, 
+               df[ which(df$shour == i & df$mode == 7), 3], 
+               0)  # group "car" and "minivan"
+    df[ which(df$shour == i & df$mode == 9), 3] <- 
+        ifelse(length(df[ which(df$shour == i & df$mode == 9), 3]) > 0, 
+               df[ which(df$shour == i & df$mode == 9), 3], 
+               0) + 
+        ifelse(length(df[ which(df$shour == i & df$mode == 10), 3]) > 0, 
+               df[ which(df$shour == i & df$mode == 10), 3], 
+               0)  # group "private bus" and "public bus"
+    df[ which(df$shour == i & df$mode == 12), 3] <- 
+        ifelse(length(df[ which(df$shour == i & df$mode == 11), 3]) > 0, 
+               df[ which(df$shour == i & df$mode == 11), 3], 
+               0) + 
+        ifelse(length(df[ which(df$shour == i & df$mode == 12), 3]) > 0, 
+               df[ which(df$shour == i & df$mode == 12), 3], 
+               0)  # group "monorail" and "train, subway"
+}
+df <- subset(df, !(mode %in% c(4, 7, 10, 11))) # remove unnecessary modes
+df$mode <- factor(df$mode, labels = groupedTransportationModesEN[1:8])  # assign verbose labels (ex. 97)
+df$mode <- factor(df$mode, 
+                  levels = rev(levels(df$mode))
+                  )  # flip order for ggplot bar chart
+pStartedSubtripsPerHourAndGroupedTransportationMode <- ggplot(df, 
+                                                              aes(x = shour, 
+                                                                  y = distance / 1000000, 
+                                                                  fill = factor(mode)
+                                                                  )
+                                                              ) + 
+    geom_bar(stat = "identity") + 
+    labs(title = "Length of Started Subtrips per Hour and Transportation Mode", 
+         x = "hour", 
+         y = "length of subtrips [1,000 km]"
+         ) + 
+    scale_x_continuous(expand = c(0, 0), 
+                       limits = c(0, 23), 
+                       breaks = c(0:23, 1), 
+                       labels = comma
+                       ) + 
+    scale_y_continuous(expand = c(0, 0), 
+                       limits = c(0, max(df$distance / 1000000, na.rm = TRUE) * 1.1), 
+                       breaks = seq(0, max(df$distance / 1000000, na.rm = TRUE) * 1.1, 500), 
                        labels = comma
                        ) + 
     scale_fill_brewer(palette = "Dark2") + 
