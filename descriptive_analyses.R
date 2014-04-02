@@ -244,29 +244,25 @@ pie(df$totdist,
 rs <- dbSendQuery(con, 
                   "SELECT means AS mode, distance FROM tky08.subtrip"
                   )
-dfSubtripLengthPerGroupedTransportationMode <- fetch(rs, n = -1)
+df <- fetch(rs, n = -1)
 dbClearResult(rs)
-dfSubtripLengthPerGroupedTransportationMode$subtrips[3] <- dfSubtripLengthPerGroupedTransportationMode$subtrips[3] + 
-    dfSubtripLengthPerGroupedTransportationMode$subtrips[4]  # group "moped" and "motorcycle"
-dfSubtripLengthPerGroupedTransportationMode$subtrips[6] <- dfSubtripLengthPerGroupedTransportationMode$subtrips[6] + 
-    dfSubtripLengthPerGroupedTransportationMode$subtrips[7]  # group "car" and "minivan"
-dfSubtripLengthPerGroupedTransportationMode$subtrips[9] <- dfSubtripLengthPerGroupedTransportationMode$subtrips[9] + 
-    dfSubtripLengthPerGroupedTransportationMode$subtrips[10]  # group "private bus" and "public bus"
-dfSubtripLengthPerGroupedTransportationMode$subtrips[11] <- dfSubtripLengthPerGroupedTransportationMode$subtrips[11] + 
-    dfSubtripLengthPerGroupedTransportationMode$subtrips[12]  # group "monorail" and "train, subway"
-dfSubtripLengthPerGroupedTransportationMode <- subset(dfSubtripLengthPerGroupedTransportationMode, 
-                                                      !(mode %in% c(4, 7, 10, 12))
-                                                      ) # remove unnecessary modes
-dfSubtripLengthPerGroupedTransportationMode$mode <- factor(dfSubtripLengthPerGroupedTransportationMode$mode, 
-                                                           labels = groupedTransportationModesEN
-                                                           )  # assign verbose labels
-dfSubtripLengthPerGroupedTransportationMode$mode <- factor(dfSubtripLengthPerGroupedTransportationMode$mode, 
-                                                      levels = rev(levels(dfSubtripLengthPerGroupedTransportationMode$mode))
-                                                      )  # flip order for ggplot bar chart
-dfSubtripLengthPerGroupedTransportationMode <- subset(dfSubtripLengthPerGroupedTransportationMode, 
-                                                      mode != "stationarity"
-                                                      )  # remove stationarity
-pSubtripLengthPerTransportationMode <- ggplot(dfSubtripLengthPerGroupedTransportationMode, 
+df$subtrips[3] <- df$subtrips[3] + df$subtrips[4]  # group "moped" and "motorcycle"
+df$subtrips[6] <- df$subtrips[6] + df$subtrips[7]  # group "car" and "minivan"
+df$subtrips[9] <- df$subtrips[9] + df$subtrips[10]  # group "private bus" and "public bus"
+df$subtrips[11] <- df$subtrips[11] + df$subtrips[12]  # group "monorail" and "train, subway"
+df <- subset(df, 
+             !(mode %in% c(4, 7, 10, 12))
+             ) # remove unnecessary modes
+df$mode <- factor(df$mode, 
+                  labels = groupedTransportationModesEN
+                  )  # assign verbose labels
+df$mode <- factor(df$mode, 
+                  levels = rev(levels(df$mode))
+                  )  # flip order for ggplot bar chart
+df <- subset(df, 
+             mode != "stationarity"
+             )  # remove stationarity
+pSubtripLengthPerTransportationMode <- ggplot(df, 
                                               aes(x = mode, 
                                                   y = distance / 1000, 
                                                   fill = mode
@@ -279,8 +275,8 @@ pSubtripLengthPerTransportationMode <- ggplot(dfSubtripLengthPerGroupedTransport
          y = "length of subtrips [km]"
          ) + 
     scale_y_continuous(expand = c(0, 0), 
-                       limits = c(0, max(dfSubtripLengthPerGroupedTransportationMode$distance / 1000, na.rm = TRUE) * 1.1), 
-                       breaks = seq(0, max(dfSubtripLengthPerGroupedTransportationMode$distance / 1000, na.rm = TRUE) * 1.1, 50), 
+                       limits = c(0, max(df$distance / 1000, na.rm = TRUE) * 1.1), 
+                       breaks = seq(0, max(df$distance / 1000, na.rm = TRUE) * 1.1, 50), 
                        labels = comma
                        ) + 
     scale_fill_brewer(palette = "Dark2") + 
@@ -297,9 +293,9 @@ pSubtripLengthPerTransportationMode
 rs <- dbSendQuery(con, 
                   "SELECT date_part('hour', sdate) AS shour, means AS mode, COUNT(*) AS subtrips FROM tky08.subtrip WHERE sdate IS NOT NULL GROUP BY shour, mode"
                   )
-dfStartedSubtripsPerHour <- fetch(rs, n = -1)
+df <- fetch(rs, n = -1)
 dbClearResult(rs)
-pStartedSubtripsPerHour <- ggplot(dfStartedSubtripsPerHour, 
+pStartedSubtripsPerHour <- ggplot(df, 
                                   aes(x = shour, y = subtrips)
                                   ) + 
     geom_bar(stat = "identity",
@@ -322,7 +318,8 @@ pStartedSubtripsPerHour
 
 
 # 07a # started subtrips per hour and transportation mode
-pStartedSubtripsPerHourAndTransportationMode <- ggplot(dfStartedSubtripsPerHour, 
+df$mode <- factor(df$mode, labels = transportationModesEN[1:12])  # assign verbose labels (ex. 97)
+pStartedSubtripsPerHourAndTransportationMode <- ggplot(df, 
                                                        aes(x = shour, y = subtrips)
                                                        ) + 
     geom_bar(stat = "identity") + 
@@ -344,9 +341,53 @@ pStartedSubtripsPerHourAndTransportationMode
 
 
 # 07b # started subtrips per hour and grouped transportation mode
-pStartedSubtripsPerHourAndTransportationMode <- ggplot(dfStartedSubtripsPerHour, 
-                                                       aes(x = shour, y = subtrips)
-                                                       ) + 
+rs <- dbSendQuery(con, 
+                  "SELECT date_part('hour', sdate) AS shour, means AS mode, COUNT(*) AS subtrips FROM tky08.subtrip WHERE sdate IS NOT NULL GROUP BY shour, mode"
+)
+df <- fetch(rs, n = -1)
+dbClearResult(rs)
+for (i in seq(0, 23)) {
+    cat(i)
+    df[ which(df$shour == i & df$mode == 3), 3] <- 
+        ifelse(length(df[ which(df$shour == i & df$mode == 3), 3]) > 0, 
+               df[ which(df$shour == i & df$mode == 3), 3], 
+               0) + 
+        ifelse(length(df[ which(df$shour == i & df$mode == 4), 3]) > 0, 
+               df[ which(df$shour == i & df$mode == 4), 3], 
+               0)  # group "moped" and "motorcycle"
+    df[ which(df$shour == i & df$mode == 6), 3] <- 
+        ifelse(length(df[ which(df$shour == i & df$mode == 6), 3]) > 0, 
+               df[ which(df$shour == i & df$mode == 6), 3], 
+               0) + 
+        ifelse(length(df[ which(df$shour == i & df$mode == 7), 3]) > 0, 
+               df[ which(df$shour == i & df$mode == 7), 3], 
+               0)  # group "car" and "minivan"
+    df[ which(df$shour == i & df$mode == 9), 3] <- 
+        ifelse(length(df[ which(df$shour == i & df$mode == 9), 3]) > 0, 
+               df[ which(df$shour == i & df$mode == 9), 3], 
+               0) + 
+        ifelse(length(df[ which(df$shour == i & df$mode == 10), 3]) > 0, 
+               df[ which(df$shour == i & df$mode == 10), 3], 
+               0)  # group "private bus" and "public bus"
+    df[ which(df$shour == i & df$mode == 12), 3] <- 
+        ifelse(length(df[ which(df$shour == i & df$mode == 11), 3]) > 0, 
+               df[ which(df$shour == i & df$mode == 11), 3], 
+               0) + 
+        ifelse(length(df[ which(df$shour == i & df$mode == 12), 3]) > 0, 
+               df[ which(df$shour == i & df$mode == 12), 3], 
+               0)  # group "monorail" and "train, subway"
+}
+df <- subset(df, !(mode %in% c(4, 7, 10, 11))) # remove unnecessary modes
+df$mode <- factor(df$mode, labels = groupedTransportationModesEN[1:8])  # assign verbose labels (ex. 97)
+df$mode <- factor(df$mode, 
+                  levels = rev(levels(df$mode))
+                  )  # flip order for ggplot bar chart
+pStartedSubtripsPerHourAndGroupedTransportationMode <- ggplot(df, 
+                                                              aes(x = shour, 
+                                                                  y = subtrips, 
+                                                                  fill = factor(mode)
+                                                                  )
+                                                              ) + 
     geom_bar(stat = "identity") + 
     labs(title = "Started Subtrips per Hour and Transportation Mode", 
          x = "hour", 
@@ -360,9 +401,10 @@ pStartedSubtripsPerHourAndTransportationMode <- ggplot(dfStartedSubtripsPerHour,
     scale_y_continuous(expand = c(0, 0), 
                        labels = comma
                        ) + 
+    scale_fill_brewer(palette = "Dark2") + 
     theme(legend.position = "none") +
     facet_wrap(~ mode)
-pStartedSubtripsPerHourAndTransportationMode
+pStartedSubtripsPerHourAndGroupedTransportationMode
 
 
 # clean up
