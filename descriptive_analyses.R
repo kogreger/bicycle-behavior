@@ -338,7 +338,6 @@ pStartedSubtripsPerHourAndTransportationMode <- ggplot(df,
     facet_wrap(~ mode)
 pStartedSubtripsPerHourAndTransportationMode
 
-
 # 07b # started subtrips per hour and grouped transportation mode
 rs <- dbSendQuery(con, 
                   "SELECT date_part('hour', sdate) AS shour, means AS mode, COUNT(*) AS subtrips FROM tky08.subtrip WHERE sdate IS NOT NULL GROUP BY shour, mode"
@@ -346,7 +345,6 @@ rs <- dbSendQuery(con,
 df <- fetch(rs, n = -1)
 dbClearResult(rs)
 for (i in seq(0, 23)) {
-    cat(i)
     df[ which(df$shour == i & df$mode == 3), 3] <- 
         ifelse(length(df[ which(df$shour == i & df$mode == 3), 3]) > 0, 
                df[ which(df$shour == i & df$mode == 3), 3], 
@@ -404,7 +402,6 @@ pStartedSubtripsPerHourAndGroupedTransportationMode <- ggplot(df,
     facet_wrap(~ mode)
 pStartedSubtripsPerHourAndGroupedTransportationMode
 
-
 # 07b_bike # started bicycle subtrips per hour
 rs <- dbSendQuery(con, 
                   "SELECT date_part('hour', sdate) AS shour, means AS mode, COUNT(*) AS subtrips FROM tky08.subtrip WHERE sdate IS NOT NULL AND means = 2 GROUP BY shour, mode"
@@ -461,10 +458,8 @@ pLengthStartedSubtripsPerHour <- ggplot(df,
     theme(legend.position = "none")
 pLengthStartedSubtripsPerHour
 
-
 # 08b # length of started subtrips per hour and grouped transportation mode
 for (i in seq(0, 23)) {
-    cat(i)
     df[ which(df$shour == i & df$mode == 3), 3] <- 
         ifelse(length(df[ which(df$shour == i & df$mode == 3), 3]) > 0, 
                df[ which(df$shour == i & df$mode == 3), 3], 
@@ -563,26 +558,25 @@ rs <- dbSendQuery(con,
 )
 df <- fetch(rs, n = -1)
 dbClearResult(rs)
-avg = (df$distance / 1000) / df$subtrips
 pAverageLengthStartedSubtripsPerHour <- ggplot(df, 
-                                        aes(x = shour, y = ((distance / 1000) / subtrips))
-) + 
+                                               aes(x = shour, y = ((distance / 1000) / subtrips))
+                                               ) + 
     geom_bar(stat = "identity",
-             fill = "#660099"
-    ) + 
+             color = "#660099"
+             ) + 
     labs(title = "Average Length of Started Subtrips per Hour", 
          x = "hour", 
          y = "average length of subtrips [km]"
-    ) + 
+         ) + 
     scale_x_continuous(expand = c(0, 0), 
                        breaks = c(0:23, 1), 
                        labels = comma
-    ) + 
+                       ) + 
     scale_y_continuous(expand = c(0, 0), 
                        limits = c(0, max((df$distance / 1000) / df$subtrips, na.rm = TRUE) * 1.1), 
                        breaks = seq(0, max((df$distance / 1000) / df$subtrips, na.rm = TRUE) * 1.1, 10), 
                        labels = comma
-    ) + 
+                       ) + 
     theme(legend.position = "none")
 pAverageLengthStartedSubtripsPerHour
 
@@ -634,21 +628,20 @@ pAverageLengthStartedSubtripsPerHourAndGroupedTransportationMode <- ggplot(df,
     labs(title = "Average Length of Started Subtrips per Hour and Transportation Mode", 
          x = "hour", 
          y = "average length of subtrips [km]"
-    ) + 
+         ) + 
     scale_x_continuous(expand = c(0, 0), 
                        breaks = c(0:23, 1), 
                        labels = comma
-    ) + 
+                       ) + 
     scale_y_continuous(expand = c(0, 0), 
                        limits = c(0, max((df$distance / 1000) / df$subtrips, na.rm = TRUE) * 1.1), 
                        breaks = seq(0, max((df$distance / 1000) / df$subtrips, na.rm = TRUE) * 1.1, 500), 
                        labels = comma
-    ) + 
+                       ) + 
     scale_fill_brewer(palette = "Dark2") + 
     theme(legend.position = "none") +
     facet_wrap(~ mode)
 pAverageLengthStartedSubtripsPerHourAndGroupedTransportationMode
-
 
 # 09b_bike # average length of started bicycle subtrips per hour
 rs <- dbSendQuery(con, 
@@ -658,7 +651,7 @@ df <- fetch(rs, n = -1)
 dbClearResult(rs)
 df$mode <- factor(df$mode, labels = groupedTransportationModesEN[2])  # assign verbose labels (only "bicycle")
 pAverageLengthStartedBicycleSubtripsPerHour <- ggplot(df, 
-                                                      aes(x = shour, y = distance / subtrips)
+                                                      aes(x = shour, y = (distance / 1000) / subtrips)
                                                       ) + 
     geom_bar(stat = "identity", 
              fill = "#660099"
@@ -672,8 +665,8 @@ pAverageLengthStartedBicycleSubtripsPerHour <- ggplot(df,
                        labels = comma
                        ) + 
     scale_y_continuous(expand = c(0, 0), 
-                       limits = c(0, max(df$distance / df$subtrips, na.rm = TRUE) * 1.1), 
-                       breaks = seq(0, max(df$distance / df$subtrips, na.rm = TRUE) * 1.1, 5000), 
+                       limits = c(0, max((df$distance / 1000) / df$subtrips, na.rm = TRUE) * 1.1), 
+                       breaks = seq(0, max((df$distance / 1000) / df$subtrips, na.rm = TRUE) * 1.1, 1), 
                        labels = comma
                        ) + 
     theme(legend.position = "none")
