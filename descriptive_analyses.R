@@ -22,14 +22,18 @@ old_theme <- theme_update(plot.background = element_blank(),
                           axis.text.x = element_text(color = "#000000", size = 15), 
                           axis.text.y = element_text(color = "#000000", size = 15, hjust = 1), 
                           axis.title.x = element_text(color = "#000000", size = 15, face = "bold"), 
-                          axis.title.y = element_text(color = "#000000", size = 15, face = "bold", angle = 90)
+                          axis.title.y = element_text(color = "#000000", size = 15, face = "bold", angle = 90), 
+                          legend.title = element_text(color = "#000000", size = 15, face = "bold"), 
+                          legend.text = element_text(color = "#000000", size = 15), 
+                          legend.background = element_rect(color = NA)
                           )
 
 # variable declaration
 #ageGroupsJP <- factor(c("0歳以上5歳未満", "5歳以上10歳未満", "10 歳以上 15 歳未満", "15 歳以上 20 歳未満", "20 歳以上 25 歳未満", "25 歳以上 30 歳未満", "30 歳以上 35 歳未満", "35 歳以上 40 歳未満", "40 歳以上 45 歳未満", "45 歳以上 50 歳未満", "50 歳以上 55 歳未満", "55 歳以上 60 歳未満", "60 歳以上 65 歳未満", "65 歳以上 70 歳未満", "70 歳以上 75 歳未満", "75 歳以上 80 歳未満", "80 歳以上 85 歳未満", "85 歳以上"))
-#ageGroupsEN <- factor(c("under 4 years", "5-9 years", "10-14 years", "15-19 years", "20-24 years", "25-29 years", "30-34 years", "35-39 years", "40-44 years", "45-49 years", "50-54 years", "55-59 years", "60-64 years", "65-69 years", "70-74 years", "75-79 years", "80-84 years", "85 years and older"))
+ageGroupsEN <- factor(c("<5", "5-9", "10-14", "15-19", "20-24", "25-29", "30-34", "35-39", "40-44", "45-49", "50-54", "55-59", "60-64", "65-69", "70-74", "75-79", "80-84", ">84"))
 #gendersJP <- factor(c("男性", "女性", "不明"))
-#gendersEN <- factor(c("male", "female", "n/a"))
+gendersEN <- factor(c("male", "female", "n/a"))
+genderColors <- c(male = "blue", female = "red")
 #transportationModesJP <- factor(c("徒歩", "自転車", "原動機付自転車", "自動二輪車", "タクシー", "乗用車", "軽乗用車", "貨物自動車", "自家用バス", "路線バス", "モノレール・新交通", "鉄道・地下鉄", "停滞"))
 transportationModesEN <- factor(c("walking", "bicycle", "moped", "motorcycle", "taxi", "car", "minivan", "truck", "private bus", "public bus", "monorail", "train, subway", "stationarity"))
 #groupedTransportationModesJP <- factor(c("徒歩", "自転車", "自動二輪車", "タクシー", "乗用車", "貨物自動車", "バス", "鉄道", "停滞"))
@@ -671,6 +675,35 @@ pAverageLengthStartedBicycleSubtripsPerHour <- ggplot(df,
                        ) + 
     theme(legend.position = "none")
 pAverageLengthStartedBicycleSubtripsPerHour
+
+
+# 10 # number of bicycle subtrips by age and gender
+rs <- dbSendQuery(con, 
+                  "SELECT p.sex AS gender, p.age AS age, COUNT(s.*) AS subtrips FROM tky08.subtrip s JOIN tky08.person p ON s.pid = p.pid WHERE s.means = 2 GROUP BY p.sex, p.age ORDER BY p.sex, p.age"
+)
+df <- fetch(rs, n = -1)
+dbClearResult(rs)
+df$age <- factor(df$age, labels = ageGroupsEN[2:18])  # assign verbose labels (except youngest)
+df$gender <- factor(df$gender, labels = gendersEN[1:2])  # assign verbose labels (except "n/a")
+pBicycleSubtripsByAgeAndGender <- ggplot(df, 
+                                         aes(x = age, y = subtrips, fill = gender)
+                                         ) + 
+    geom_bar(stat = "identity", 
+             position = "dodge"
+             ) + 
+    labs(title = "Bicycle Subtrips by Age and Gender", 
+         x = "age", 
+         y = "subtrips"
+         ) + 
+    scale_y_continuous(expand = c(0, 0), 
+                       limits = c(0, max(df$subtrips, na.rm = TRUE) * 1.1), 
+                       breaks = seq(0, max(df$subtrips, na.rm = TRUE) * 1.1, 5000), 
+                       labels = comma
+                       ) + 
+    theme(legend.position = c(1, 1), 
+          legend.justification = c(1, 1))
+pBicycleSubtripsByAgeAndGender
+
 
 
 # clean up
